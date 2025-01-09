@@ -33,6 +33,24 @@ def get_build_status(build_id):
         print(f"Error retrieving build status: {e}")
         return 'UNKNOWN'
 
+def get_cloudwatch_logs(build_id):
+    client = boto3.client('logs')
+    log_group_name = f"/aws/codebuild/{build_id.split(':')[0]}"
+    log_stream_name = build_id.split(':')[1]
+
+    try:
+        response = client.get_log_events(
+            logGroupName=log_group_name,
+            logStreamName=log_stream_name,
+            startFromHead=True
+        )
+        events = response['events']
+        log_messages = [event['message'] for event in events]
+        return "\n".join(log_messages)
+    except Exception as e:
+        print(f"Error retrieving CloudWatch logs: {e}")
+        return "Error retrieving CloudWatch logs."
+
 def main():
     email_from = "harikarn10@gmail.com"
     email_to = "harikrishnatangelapally@gmail.com"
@@ -56,10 +74,13 @@ def main():
     build_status = get_build_status(build_id)
     while build_status == 'IN_PROGRESS':
         print("Build is still in progress. Waiting for status to change...")
-        time.sleep(15)  # Wait for 60 seconds before checking again
+        time.sleep(15)  # Wait for 15 seconds before checking again
         build_status = get_build_status(build_id)
 
     print(f"Final Build Status: {build_status}")
+
+    # Retrieve CloudWatch logs
+    cloudwatch_logs = get_cloudwatch_logs(build_id)
 
     # Prepare the final email body
     final_email_subject = f"CodeBuild Final Status for project {project_name}"
@@ -68,6 +89,8 @@ def main():
     <p>The build for <strong>{project_name}</strong> has finished.</p>
     <p>Build ID: {build_id}</p>
     <p>Status: <strong>{build_status}</strong></p>
+    <p>Logs:</p>
+    <pre>{cloudwatch_logs}</pre>
     """
 
     # Send email with final build status
