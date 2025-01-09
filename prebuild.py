@@ -74,7 +74,7 @@ def main():
     build_status = get_build_status(build_id)
     while build_status == 'IN_PROGRESS':
         print("Build is still in progress. Waiting for status to change...")
-        time.sleep(15)  # Wait for 15 seconds before checking again
+        #time.sleep(15)  # Wait for 15 seconds before checking again
         build_status = get_build_status(build_id)
 
     print(f"Final Build Status: {build_status}")
