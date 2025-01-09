@@ -41,7 +41,17 @@ def get_build_status(build_id):
     except Exception as e:
         print(f"Error retrieving build status: {e}")
         return {'buildStatus': 'UNKNOWN'}
-
+def wait_for_build_completion(build_id, poll_interval=5):
+    client = boto3.client('codebuild')
+    while True:
+        build_info = get_build_status(build_id)
+        build_status = build_info.get('buildStatus', 'UNKNOWN')
+        
+        if build_status not in ['IN_PROGRESS', 'UNKNOWN']:
+            return build_info  # Return final build info once it's not in progress
+        
+        print(f"Current build status: {build_status}. Waiting...")
+        time.sleep(poll_interval)  # Wait for a bit before polling again
 if __name__ == "__main__":
     build_id = os.environ.get('CODEBUILD_BUILD_ID')
     build_info = get_build_status(build_id) if build_id else {'buildStatus': 'UNKNOWN'}
