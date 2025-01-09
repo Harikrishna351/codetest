@@ -1,28 +1,23 @@
-import smtplib
 import os
-import boto3
 import time
+import boto3
+import smtplib
 from email.mime.text import MIMEText
 
-def send_email(subject, message):
-    smtp_server = "email-smtp.us-east-1.amazonaws.com"  # Your SMTP server
-    smtp_port = 587
-    smtp_username = "AKIAS74TLYHELKOX7D74"  # Replace with your SMTP username
-    smtp_password = "BOnvUFr8KQHsryZa3a/r2NRXSASK6UbhSpRIwLamvEZD"  # Replace with your SMTP password
-    from_email = "harikarn10@gmail.com"  # Replace with your email
-    to_email = "harikrishnatangelapally@gmail.com"  # Replace with recipient email
-
-    # Create the email
-    msg = MIMEText(message)
+def send_email(subject, message, from_email, to_email, smtp_server, smtp_port, smtp_username, smtp_password):
+    msg = MIMEText(message, 'html')
     msg['Subject'] = subject
     msg['From'] = from_email
     msg['To'] = to_email
 
-    # Send the email
-    with smtplib.SMTP(smtp_server, smtp_port) as server:
-        server.starttls()
-        server.login(smtp_username, smtp_password)
-        server.sendmail(from_email, to_email, msg.as_string())
+    try:
+        with smtplib.SMTP(smtp_server, smtp_port) as server:
+            server.starttls()
+            server.login(smtp_username, smtp_password)
+            server.sendmail(from_email, to_email, msg.as_string())
+        print(f"Email sent to {to_email}.")
+    except Exception as e:
+        print(f"Error sending email: {e}")
 
 def get_build_status(build_id):
     client = boto3.client('codebuild')
@@ -34,41 +29,63 @@ def get_build_status(build_id):
             return {
                 'buildStatus': build_info['buildStatus'],
                 'currentPhase': build_info['currentPhase'],
-                'buildNumber': build_info['buildNumber'],
-                'endTime': build_info.get('endTime', 'N/A')
+                'endTime': build_info.get('endTime', 'Still Running'),
+                'buildNumber': build_info['buildNumber']
             }
         else:
             return {'buildStatus': 'UNKNOWN'}
     except Exception as e:
         print(f"Error retrieving build status: {e}")
         return {'buildStatus': 'UNKNOWN'}
-def wait_for_build_completion(build_id, poll_interval=5):
-    client = boto3.client('codebuild')
-    while True:
-        build_info = get_build_status(build_id)
-        build_status = build_info.get('buildStatus', 'UNKNOWN')
-        
-        if build_status not in ['IN_PROGRESS', 'UNKNOWN']:
-            return build_info  # Return final build info once it's not in progress
-        
-        print(f"Current build status: {build_status}. Waiting...")
-        time.sleep(poll_interval)  # Wait for a bit before polling again
-# Inside the main function where you send the email
 
-if __name__ == "__main__":
-    build_id = os.environ.get('CODEBUILD_BUILD_ID')
-    build_info = wait_for_build_completion(build_id) if build_id else {'buildStatus': 'UNKNOWN'}
-    
-    # Accessing build information with correct keys
-    build_number = build_info.get('buildNumber', 'UNKNOWN')
-    build_status = build_info.get('buildStatus', 'UNKNOWN')
-    current_phase = build_info.get('currentPhase', 'N/A')
-    end_time = build_info.get('endTime', 'N/A')
+def main():
+    email_from = "harikarn10@gmail.com"
+    email_to = "harikrishnatangelapally@gmail.com"
+    smtp_server = "email-smtp.us-east-1.amazonaws.com"
+    smtp_port = 587
+    smtp_username = "AKIAS74TLYHELKOX7D74"
+    smtp_password = "BOnvUFr8KQHsryZa3a/r2NRXSASK6UbhSpRIwLamvEZD"
 
-    subject = f"CodeBuild Status: {build_status}"
-    message = (
-        f"The CodeBuild job #{build_number} finished with status: {build_status}.\n"
-        f"Current Phase: {current_phase}\n"
-        f"End Time: {end_time}"
-    )
-    send_email(subject, message)
+    env = os.environ.get('ENV', 'np')  # Default environment
+    project_name = os.environ.get('CODEBUILD_PROJECT', f"codebuildtest-{env}")
+    build_id = os.environ.get('CODEBUILD_BUILD_ID')  # This should be set by CodeBuild
+
+    if not build_id:
+        print("Build ID not found in environment variables.")
+        return
+
+    print(f"Using Project Name: {project_name}")
+    print(f"Using Build ID: {build_id}")
+
+    # Send initial email that the build is in progress
+    email_subject = f"CodeBuild Alert for project {project_name}"
+    email_body = f"""
+    <p>Hi Team,</p>
+    <p>The build for <strong>{project_name}</strong> is currently <strong>IN_PROGRESS</strong>.</p>
+    <p>Build ID: {build_id}</p>
+    """
+    send_email(email_subject, email_body, email_from, email_to, smtp_server, smtp_port, smtp_username, smtp_password)
+
+    # Poll build status until it's no longer "IN_PROGRESS"
+    build_status = get_build_status(build_id)
+    while build_status == 'IN_PROGRESS':
+        print("Build is still in progress. Waiting for status to change...")
+        build_status = get_build_status(build_id)
+
+    print(f"Final Build Status: {build_status}")
+
+    # Prepare the final email body
+    final_email_subject = f"CodeBuild Final Status for project {project_name}"
+    final_email_body = f"""
+    <p>Hi Team,</p>
+    <p>The build for <strong>{project_name}</strong> has finished.</p>
+    <p>Build ID: {build_id}</p>
+    <p>Status: <strong>{build_status}</strong></p>
+    """
+
+    # Send email with final build status
+    print(f'Sending final email for project: {project_name} with final status: {build_status}')
+    send_email(final_email_subject, final_email_body, email_from, email_to, smtp_server, smtp_port, smtp_username, smtp_password)
+
+if __name__ == '__main__':
+    main()
