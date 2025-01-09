@@ -51,14 +51,22 @@ def wait_for_build_completion(build_id, poll_interval=5):
         
         print(f"Current build status: {build_status}. Waiting...")
         time.sleep(poll_interval)  # Wait for a bit before polling again
+# Inside the main function where you send the email
+
 if __name__ == "__main__":
     build_id = os.environ.get('CODEBUILD_BUILD_ID')
-    build_info = get_build_status(build_id) if build_id else {'buildStatus': 'UNKNOWN'}
+    build_info = wait_for_build_completion(build_id) if build_id else {'buildStatus': 'UNKNOWN'}
     
-    subject = f"CodeBuild Status: {build_info['buildStatus']}"
+    # Accessing build information with correct keys
+    build_number = build_info.get('buildNumber', 'UNKNOWN')
+    build_status = build_info.get('buildStatus', 'UNKNOWN')
+    current_phase = build_info.get('currentPhase', 'N/A')
+    end_time = build_info.get('endTime', 'N/A')
+
+    subject = f"CodeBuild Status: {build_status}"
     message = (
-        f"The CodeBuild job #{build_info.get('buildNumber', 'UNKNOWN')} finished with status: {build_info['buildStatus']}.\n"
-        f"Current State: {build_info.get('currentState', 'N/A')}\n"
-        f"End Time: {build_info.get('endTime', 'N/A')}"
+        f"The CodeBuild job #{build_number} finished with status: {build_status}.\n"
+        f"Current Phase: {current_phase}\n"
+        f"End Time: {end_time}"
     )
     send_email(subject, message)
