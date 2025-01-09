@@ -32,8 +32,7 @@ def get_build_status(build_id):
             build_info = builds[0]
             return {
                 'buildStatus': build_info['buildStatus'],
-                'currentPhase': build_info['currentPhase'],
-                'endTime': build_info.get('endTime', 'Still Running'),
+                'currentState': build_info['currentState'],
                 'buildNumber': build_info['buildNumber']
             }
         else:
@@ -59,7 +58,7 @@ if __name__ == "__main__":
     subject = f"CodeBuild Status: {build_info['buildStatus']}"
     message = (
         f"The CodeBuild job #{build_info.get('buildNumber', 'UNKNOWN')} finished with status: {build_info['buildStatus']}.\n"
-        f"Current Phase: {build_info.get('currentPhase', 'N/A')}\n"
+        f"Current State: {build_info.get('currentState', 'N/A')}\n"
         f"End Time: {build_info.get('endTime', 'N/A')}"
     )
     send_email(subject, message)
