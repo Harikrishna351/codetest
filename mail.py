@@ -1,6 +1,7 @@
 import smtplib
 import os
 import boto3
+import time
 from email.mime.text import MIMEText
 
 def send_email(subject, message):
@@ -32,8 +33,9 @@ def get_build_status(build_id):
             build_info = builds[0]
             return {
                 'buildStatus': build_info['buildStatus'],
-                'currentState': build_info['currentState'],
-                'buildNumber': build_info['buildNumber']
+                'currentPhase': build_info['currentPhase'],
+                'buildNumber': build_info['buildNumber'],
+                'endTime': build_info.get('endTime', 'N/A')
             }
         else:
             return {'buildStatus': 'UNKNOWN'}
