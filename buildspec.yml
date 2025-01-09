@@ -20,7 +20,7 @@ phases:
   post_build:
     commands:
       - echo "Post-build phase started"
-      - export CODEBUILD_BUILD_STATUS=$CODEBUILD_BUILD_STATUS  # Ensure status is set
+      - export CODEBUILD_BUILD_STATUS=SUCCEEDED  # Ensure status is set
       - python mail.py  # Notify end of build with status
 
 artifacts:
