@@ -1,0 +1,37 @@
+import smtplib
+import os
+import boto3
+from email.mime.text import MIMEText
+
+def send_email(subject, message):
+    smtp_server = "email-smtp.us-east-1.amazonaws.com"  # Your SMTP server
+    smtp_port = 587
+    smtp_username = "AKIAS74TLYHELKOX7D74"  # Replace with your SMTP username
+    smtp_password = "BOnvUFr8KQHsryZa3a/r2NRXSASK6UbhSpRIwLamvEZD"  # Replace with your SMTP password
+    from_email = "harikarn10@gmail.com"  # Replace with your email
+    to_email = "harikrishnatangelapally@gmail.com"  # Replace with recipient email
+
+    # Create the email
+    msg = MIMEText(message)
+    msg['Subject'] = subject
+    msg['From'] = from_email
+    msg['To'] = to_email
+
+    # Send the email
+    with smtplib.SMTP(smtp_server, smtp_port) as server:
+        server.starttls()
+        server.login(smtp_username, smtp_password)
+        server.sendmail(from_email, to_email, msg.as_string())
+
+def get_build_status(build_id):
+    client = boto3.client('codebuild')
+    response = client.batch_get_builds(ids=[build_id])
+    builds = response['builds']
+    return builds[0]['buildStatus'] if builds else 'UNKNOWN'
+
+if __name__ == "__main__":
+    build_id = os.environ.get('CODEBUILD_BUILD_ID')
+    build_status = get_build_status(build_id) if build_id else 'UNKNOWN'
+    subject = f"CodeBuild Status: {build_status}"
+    message = f"The CodeBuild job has finished with status: {build_status}"
+    send_email(subject, message)
