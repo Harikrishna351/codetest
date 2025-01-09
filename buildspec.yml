@@ -10,7 +10,7 @@ phases:
   pre_build:
     commands:
       - echo "Pre-build phase started"
-      - python mail.py  # Notify start of build
+      - python prebuild.py  # Notify start of build
 
   build:
     commands:
@@ -20,7 +20,7 @@ phases:
   post_build:
     commands:
       - echo "Post-build phase started"
-      - python mail.py  # Notify end of build with status
+      - python postbuild.py  # Notify end of build with status
 
 artifacts:
   files:
