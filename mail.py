@@ -25,13 +25,31 @@ def send_email(subject, message):
 
 def get_build_status(build_id):
     client = boto3.client('codebuild')
-    response = client.batch_get_builds(ids=[build_id])
-    builds = response['builds']
-    return builds[0]['buildStatus'] if builds else 'UNKNOWN'
+    try:
+        response = client.batch_get_builds(ids=[build_id])
+        builds = response['builds']
+        if builds:
+            build_info = builds[0]
+            return {
+                'buildStatus': build_info['buildStatus'],
+                'currentPhase': build_info['currentPhase'],
+                'endTime': build_info.get('endTime', 'Still Running'),
+                'buildNumber': build_info['buildNumber']
+            }
+        else:
+            return {'buildStatus': 'UNKNOWN'}
+    except Exception as e:
+        print(f"Error retrieving build status: {e}")
+        return {'buildStatus': 'UNKNOWN'}
 
 if __name__ == "__main__":
     build_id = os.environ.get('CODEBUILD_BUILD_ID')
-    build_status = get_build_status(build_id) if build_id else 'UNKNOWN'
-    subject = f"CodeBuild Status: {build_status}"
-    message = f"The CodeBuild job has finished with status: {build_status}"
+    build_info = get_build_status(build_id) if build_id else {'buildStatus': 'UNKNOWN'}
+    
+    subject = f"CodeBuild Status: {build_info['buildStatus']}"
+    message = (
+        f"The CodeBuild job #{build_info.get('buildNumber', 'UNKNOWN')} finished with status: {build_info['buildStatus']}.\n"
+        f"Current Phase: {build_info.get('currentPhase', 'N/A')}\n"
+        f"End Time: {build_info.get('endTime', 'N/A')}"
+    )
     send_email(subject, message)
