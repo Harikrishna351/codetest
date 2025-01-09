@@ -20,7 +20,7 @@ phases:
   post_build:
     commands:
       - echo "Post-build phase started"
-      - python postbuild.py  # Notify end of build with status
+      - python prebuild.py  # Notify end of build with status
 
 artifacts:
   files:
