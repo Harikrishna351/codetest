@@ -26,17 +26,12 @@ def get_build_status(build_id):
         builds = response['builds']
         if builds:
             build_info = builds[0]
-            return {
-                'buildStatus': build_info['buildStatus'],
-                'currentPhase': build_info['currentPhase'],
-                'endTime': build_info.get('endTime', 'Still Running'),
-                'buildNumber': build_info['buildNumber']
-            }
+            return build_info['buildStatus']
         else:
-            return {'buildStatus': 'UNKNOWN'}
+            return 'UNKNOWN'
     except Exception as e:
         print(f"Error retrieving build status: {e}")
-        return {'buildStatus': 'UNKNOWN'}
+        return 'UNKNOWN'
 
 def main():
     email_from = "harikarn10@gmail.com"
@@ -70,6 +65,7 @@ def main():
     build_status = get_build_status(build_id)
     while build_status == 'IN_PROGRESS':
         print("Build is still in progress. Waiting for status to change...")
+        time.sleep(60)  # Wait for 60 seconds before checking again
         build_status = get_build_status(build_id)
 
     print(f"Final Build Status: {build_status}")
