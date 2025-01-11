@@ -26,8 +26,7 @@ def get_build_status(build_id):
         response = client.batch_get_builds(ids=[build_id])
         builds = response['builds']
         if builds:
-            build_status = builds[0]['buildStatus']
-            return build_status
+            return builds[0]['buildStatus']
         else:
             return 'UNKNOWN'
     except Exception as e:
@@ -38,24 +37,21 @@ def get_build_logs(build_id):
     client = boto3.client('codebuild')
     try:
         logs = client.batch_get_builds(ids=[build_id])
-        log_url = logs['builds'][0]['logs']['deepLink']
-        return log_url
+        return logs['builds'][0]['logs']['deepLink']
     except Exception as e:
         print(f"Error retrieving build logs: {e}")
         return None
 
 def save_logs_to_file(log_url, file_path):
     # Here you would typically fetch the logs from the log URL
-    # For simplicity, we will simulate this by writing the URL to a file
     with open(file_path, 'w') as file:
         file.write(f"Log URL: {log_url}\n")
-        # Simulate writing some log content
+        # Simulate some log content
         file.write("Build completed successfully.\n")  # Simulate successful log content
 
 def read_logs_from_file(file_path):
     with open(file_path, 'r') as file:
-        content = file.read()
-    return content
+        return file.read()
 
 def main():
     email_from = "harikarn10@gmail.com"
@@ -65,22 +61,20 @@ def main():
     smtp_username = "AKIAS74TLYHELKOX7D74"
     smtp_password = "BOnvUFr8KQHsryZa3a/r2NRXSASK6UbhSpRIwLamvEZD"
 
-    env = os.environ.get('ENV', 'np')  # Default environment
+    env = os.environ.get('ENV', 'np')
     project_name = os.getenv('CODEBUILD_PROJECT', f"codebuildtest-{env}")
-    build_id = os.getenv('CODEBUILD_BUILD_ID')  # This should be set by CodeBuild
+    build_id = os.getenv('CODEBUILD_BUILD_ID')
 
     if not build_id:
         print("Build ID not found in environment variables.")
         sys.exit(1)
 
-    # Initial build status check
+    # Check initial build status
     build_status = get_build_status(build_id)
     print(f"Current build status: {build_status}")
-    print(f"Using Project Name: {project_name}")
-    print(f"Using Build ID: {build_id}")
 
-    # Conditional email for "IN_PROGRESS"
-    if build_status == 'SUCCEEDED':
+    # Send IN_PROGRESS email if the build is currently in progress
+    if build_status == 'IN_PROGRESS':
         in_progress_email_subject = f"CodeBuild In Progress for project {project_name}"
         in_progress_email_body = f"""
         <p>Hi Team,</p>
@@ -90,10 +84,18 @@ def main():
         """
         send_email(in_progress_email_subject, in_progress_email_body, email_from, email_to, smtp_server, smtp_port, smtp_username, smtp_password)
 
+    # Wait for the build to complete
+    while build_status == 'IN_PROGRESS':
+        print("Waiting for the build to finish...")
+        time.sleep(60)  # Check every minute
+        build_status = get_build_status(build_id)
+
+    print(f"Final build status: {build_status}")
+
     # Immediately retrieve and save build logs
     log_url = get_build_logs(build_id)
     if log_url:
-        log_file_path = "build_logs.txt"  # Specify the file path for logs
+        log_file_path = "build_logs.txt"
         save_logs_to_file(log_url, log_file_path)
 
         # Read the logs from the file
@@ -101,8 +103,8 @@ def main():
         print("Log content read from file:")
         print(log_content)
 
-        # Check the log content for success message
-        if "SUCCEEDED" in log_content:
+        # Determine final email based on build status
+        if build_status == 'SUCCEEDED':
             final_email_subject = f"CodeBuild Final Status for project {project_name}"
             final_email_body = f"""
             <p>Hi Team,</p>
