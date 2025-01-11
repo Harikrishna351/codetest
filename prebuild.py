@@ -23,10 +23,10 @@ def get_build_status(build_id):
     try:
         client = boto3.client('codebuild')
         response = client.batch_get_builds(ids=[build_id])
-        if not response[builds]:
+        if not response[build]:
             print(f"no build found with id:{build_id}")
             sys.exit(1)
-        build_status = response['builds'][0]['buildStatus']
+        build_status = response['build'][0]['buildStatus']
         return build_status
     except Exception as e:
         print(f"Error retrieving build status: {e}")
