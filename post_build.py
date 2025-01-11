@@ -54,6 +54,15 @@ def main():
         <p>Status: <strong>SUCCEEDED</strong></p>
         <p>Build Logs: <a href="{log_url}">View Logs</a></p>
         """
+    else:
+        final_email_subject = f"CodeBuild Failed for project {project_name}"
+        final_email_body = f"""
+        <p>Hi Team,</p>
+        <p>The build for <strong>{project_name}</strong> has failed.</p>
+        <p>Build ID: {build_id}</p>
+        <p>Status: <strong>FAILED</strong></p>
+        <p>Build Logs: <a href="{log_url}">View Logs</a></p>
+        """
         send_email(final_email_subject, final_email_body, email_from, email_to, smtp_server, smtp_port, smtp_username, smtp_password)
 
 if __name__ == '__main__':
