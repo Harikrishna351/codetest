@@ -38,6 +38,7 @@ def main():
     env = os.environ.get('ENV', 'np')
     project_name = os.getenv('CODEBUILD_PROJECT', f"codebuildtest-{env}")
     build_id = os.getenv('CODEBUILD_BUILD_ID')
+    build_status = os.getenv('BUILD_STATUS')
 
     if not build_id:
         print("Build ID not found in environment variables.")
@@ -46,23 +47,24 @@ def main():
     # Immediately retrieve and save build logs
     log_url = get_build_logs(build_id)
     if log_url:
-        final_email_subject = f"CodeBuild Final Status for project {project_name}"
-        final_email_body = f"""
-        <p>Hi Team,</p>
-        <p>The build for <strong>{project_name}</strong> has finished successfully.</p>
-        <p>Build ID: {build_id}</p>
-        <p>Status: <strong>SUCCEEDED</strong></p>
-        <p>Build Logs: <a href="{log_url}">View Logs</a></p>
-        """
-    else:
-        final_email_subject = f"CodeBuild Failed for project {project_name}"
-        final_email_body = f"""
-        <p>Hi Team,</p>
-        <p>The build for <strong>{project_name}</strong> has failed.</p>
-        <p>Build ID: {build_id}</p>
-        <p>Status: <strong>FAILED</strong></p>
-        <p>Build Logs: <a href="{log_url}">View Logs</a></p>
-        """
+        if build_status == "SUCCEEDED":
+            final_email_subject = f"CodeBuild Final Status for project {project_name}"
+            final_email_body = f"""
+            <p>Hi Team,</p>
+            <p>The build for <strong>{project_name}</strong> has finished successfully.</p>
+            <p>Build ID: {build_id}</p>
+            <p>Status: <strong>SUCCEEDED</strong></p>
+            <p>Build Logs: <a href="{log_url}">View Logs</a></p>
+            """
+        else:
+            final_email_subject = f"CodeBuild Failed for project {project_name}"
+            final_email_body = f"""
+            <p>Hi Team,</p>
+            <p>The build for <strong>{project_name}</strong> has failed.</p>
+            <p>Build ID: {build_id}</p>
+            <p>Status: <strong>FAILED</strong></p>
+            <p>Build Logs: <a href="{log_url}">View Logs</a></p>
+            """
         send_email(final_email_subject, final_email_body, email_from, email_to, smtp_server, smtp_port, smtp_username, smtp_password)
 
 if __name__ == '__main__':
