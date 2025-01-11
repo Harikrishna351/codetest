@@ -69,7 +69,7 @@ def main():
 
     # Wait for the build to finish (e.g., by sleeping for a certain period)
     # This is just a placeholder; you need to implement a mechanism to wait
-    time.sleep(60)  # Wait for 5 minutes; adjust as necessary
+    
 
     # Check final build status
     build_status = get_build_status(build_id)
