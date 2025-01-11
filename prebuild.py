@@ -26,14 +26,14 @@ def get_build_status(build_id):
         response = client.batch_get_builds(ids=[build_id])
         builds = response['builds']
         if builds:
-            build_info = builds[0]
-            build_status=response['builds'][0]['buildstatus']
+            build_status = builds[0]['buildStatus']
             return build_status
         else:
-            return build_status
+            return 'UNKNOWN'
     except Exception as e:
         print(f"Error retrieving build status: {e}")
         return 'UNKNOWN'
+
 def main():
     email_from = "harikarn10@gmail.com"
     email_to = "harikrishnatangelapally@gmail.com"
@@ -49,15 +49,30 @@ def main():
     if not build_id:
         print("Build ID not found in environment variables.")
         sys.exit(1)
-    status = get_build_status(build_id)
-    print(f"current build status:{status}")
+
+    # Initial build status check
+    build_status = get_build_status(build_id)
+    print(f"Current build status: {build_status}")
     print(f"Using Project Name: {project_name}")
     print(f"Using Build ID: {build_id}")
 
     # Poll build status until it's no longer "IN_PROGRESS"
-    build_status = get_build_status(build_id)
     while build_status == 'IN_PROGRESS':
         print("Build is still in progress. Waiting for status to change...")
+        
+        # Prepare email for in-progress status
+        in_progress_email_subject = f"CodeBuild In Progress for project {project_name}"
+        in_progress_email_body = f"""
+        <p>Hi Team,</p>
+        <p>The build for <strong>{project_name}</strong> is still in progress.</p>
+        <p>Build ID: {build_id}</p>
+        <p>Status: <strong>{build_status}</strong></p>
+        """
+        
+        # Send email for in-progress status
+        send_email(in_progress_email_subject, in_progress_email_body, email_from, email_to, smtp_server, smtp_port, smtp_username, smtp_password)
+        
+        time.sleep(60)  # Wait for a minute before checking the status again
         build_status = get_build_status(build_id)
 
     print(f"Final Build Status: {build_status}")
