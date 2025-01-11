@@ -1,6 +1,7 @@
 import os
 import time
 import boto3
+import sys
 import smtplib
 from email.mime.text import MIMEText
 
@@ -23,10 +24,11 @@ def get_build_status(build_id):
     try:
         client = boto3.client('codebuild')
         response = client.batch_get_builds(ids=[build_id])
-        if not response[build]:
-            print(f"no build found with id:{build_id}")
-            sys.exit(1)
-        build_status = response['build'][0]['buildStatus']
+        if builds:
+            build_info = builds[0]
+            build_info['buildStatus']
+        else:
+            build_status = response['build'][0]['buildStatus']
         return build_status
     except Exception as e:
         print(f"Error retrieving build status: {e}")
