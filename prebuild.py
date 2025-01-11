@@ -84,14 +84,6 @@ def main():
         """
         send_email(in_progress_email_subject, in_progress_email_body, email_from, email_to, smtp_server, smtp_port, smtp_username, smtp_password)
 
-    # Wait for the build to complete
-    while build_status == 'IN_PROGRESS':
-        print("Waiting for the build to finish...")
-        time.sleep(60)  # Check every minute
-        build_status = get_build_status(build_id)
-
-    print(f"Final build status: {build_status}")
-
     # Immediately retrieve and save build logs
     log_url = get_build_logs(build_id)
     if log_url:
