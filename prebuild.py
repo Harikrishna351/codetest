@@ -20,18 +20,17 @@ def send_email(subject, message, from_email, to_email, smtp_server, smtp_port, s
         print(f"Error sending email: {e}")
 
 def get_build_status(build_id):
-    client = boto3.client('codebuild')
     try:
+        client = boto3.client('codebuild')
         response = client.batch_get_builds(ids=[build_id])
-        builds = response['builds']
-        if builds:
-            build_info = builds[0]
-            return build_info['buildStatus']
-        else:
-            return 'UNKNOWN'
+        if not response[builds]:
+            print(f"no build found with id:{build_id}")
+            sys.exit(1)
+        build_status = response['builds'][0]['buildStatus']
+        return build_status
     except Exception as e:
         print(f"Error retrieving build status: {e}")
-        return 'UNKNOWN'
+        sys.exit(1)
 def main():
     email_from = "harikarn10@gmail.com"
     email_to = "harikrishnatangelapally@gmail.com"
@@ -41,13 +40,14 @@ def main():
     smtp_password = "BOnvUFr8KQHsryZa3a/r2NRXSASK6UbhSpRIwLamvEZD"
 
     env = os.environ.get('ENV', 'np')  # Default environment
-    project_name = os.environ.get('CODEBUILD_PROJECT', f"codebuildtest-{env}")
-    build_id = os.environ.get('CODEBUILD_BUILD_ID')  # This should be set by CodeBuild
+    project_name = os.getenv('CODEBUILD_PROJECT', f"codebuildtest-{env}")
+    build_id = os.getenv('CODEBUILD_BUILD_ID')  # This should be set by CodeBuild
 
     if not build_id:
         print("Build ID not found in environment variables.")
-        return
-
+        sys.exit(1)
+    status = get_build_status(build_id)
+    print(f"current build status:{status}")
     print(f"Using Project Name: {project_name}")
     print(f"Using Build ID: {build_id}")
 
@@ -55,7 +55,6 @@ def main():
     build_status = get_build_status(build_id)
     while build_status == 'IN_PROGRESS':
         print("Build is still in progress. Waiting for status to change...")
-        #time.sleep(15)  # Wait for 15 seconds before checking again
         build_status = get_build_status(build_id)
 
     print(f"Final Build Status: {build_status}")
