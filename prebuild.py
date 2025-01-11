@@ -80,7 +80,6 @@ def main():
     # Wait for the build to finish
     while build_status == 'IN_PROGRESS':
         print("Waiting for the build to finish...")
-        time.sleep(60)  # Check every minute
         build_status = get_build_status(build_id)
 
     print(f"Final build status: {build_status}")
