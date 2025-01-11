@@ -102,7 +102,7 @@ def main():
         print(log_content)
 
         # Check the log content for success message
-        if "successfully" in log_content:
+        if "SUCCEEDED" in log_content:
             final_email_subject = f"CodeBuild Final Status for project {project_name}"
             final_email_body = f"""
             <p>Hi Team,</p>
