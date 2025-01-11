@@ -50,45 +50,52 @@ def main():
         print("Build ID not found in environment variables.")
         sys.exit(1)
 
-    # Initial build status check
+    # Check initial build status
     build_status = get_build_status(build_id)
     print(f"Current build status: {build_status}")
     print(f"Using Project Name: {project_name}")
     print(f"Using Build ID: {build_id}")
 
-    # Poll build status until it's no longer "IN_PROGRESS"
-    while build_status == 'IN_PROGRESS':
-        print("Build is still in progress. Waiting for status to change...")
-        
-        # Prepare email for in-progress status
+    # Conditional email for "IN_PROGRESS"
+    if build_status == 'IN_PROGRESS':
         in_progress_email_subject = f"CodeBuild In Progress for project {project_name}"
         in_progress_email_body = f"""
         <p>Hi Team,</p>
-        <p>The build for <strong>{project_name}</strong> is still in progress.</p>
+        <p>The build for <strong>{project_name}</strong> is currently in progress.</p>
         <p>Build ID: {build_id}</p>
         <p>Status: <strong>{build_status}</strong></p>
         """
-        
-        # Send email for in-progress status
         send_email(in_progress_email_subject, in_progress_email_body, email_from, email_to, smtp_server, smtp_port, smtp_username, smtp_password)
-        
-        time.sleep(60)  # Wait for a minute before checking the status again
-        build_status = get_build_status(build_id)
 
-    print(f"Final Build Status: {build_status}")
+    # Wait for the build to finish (e.g., by sleeping for a certain period)
+    # This is just a placeholder; you need to implement a mechanism to wait
+    time.sleep(300)  # Wait for 5 minutes; adjust as necessary
 
-    # Prepare the final email body
-    final_email_subject = f"CodeBuild Final Status for project {project_name}"
-    final_email_body = f"""
-    <p>Hi Team,</p>
-    <p>The build for <strong>{project_name}</strong> has finished.</p>
-    <p>Build ID: {build_id}</p>
-    <p>Status: <strong>{build_status}</strong></p>
-    """
+    # Check final build status
+    build_status = get_build_status(build_id)
+    print(f"Final build status: {build_status}")
 
-    # Send email with final build status
-    print(f'Sending final email for project: {project_name} with final status: {build_status}')
-    send_email(final_email_subject, final_email_body, email_from, email_to, smtp_server, smtp_port, smtp_username, smtp_password)
+    # Conditional email for "SUCCEEDED"
+    if build_status == 'SUCCEEDED':
+        final_email_subject = f"CodeBuild Final Status for project {project_name}"
+        final_email_body = f"""
+        <p>Hi Team,</p>
+        <p>The build for <strong>{project_name}</strong> has finished successfully.</p>
+        <p>Build ID: {build_id}</p>
+        <p>Status: <strong>{build_status}</strong></p>
+        """
+        send_email(final_email_subject, final_email_body, email_from, email_to, smtp_server, smtp_port, smtp_username, smtp_password)
+
+    # Handle other statuses if necessary
+    elif build_status == 'FAILED':
+        failed_email_subject = f"CodeBuild Failed for project {project_name}"
+        failed_email_body = f"""
+        <p>Hi Team,</p>
+        <p>The build for <strong>{project_name}</strong> has failed.</p>
+        <p>Build ID: {build_id}</p>
+        <p>Status: <strong>{build_status}</strong></p>
+        """
+        send_email(failed_email_subject, failed_email_body, email_from, email_to, smtp_server, smtp_port, smtp_username, smtp_password)
 
 if __name__ == '__main__':
     main()
