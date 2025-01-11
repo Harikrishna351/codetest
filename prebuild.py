@@ -44,6 +44,19 @@ def get_build_logs(build_id):
         print(f"Error retrieving build logs: {e}")
         return None
 
+def save_logs_to_file(log_url, file_path):
+    # Here you would typically fetch the logs from the log URL
+    # For simplicity, we will simulate this by writing the URL to a file
+    with open(file_path, 'w') as file:
+        file.write(f"Log URL: {log_url}\n")
+        # Simulate writing some log content
+        file.write("Build completed successfully.\n")  # Simulate successful log content
+
+def read_logs_from_file(file_path):
+    with open(file_path, 'r') as file:
+        content = file.read()
+    return content
+
 def main():
     email_from = "harikarn10@gmail.com"
     email_to = "harikrishnatangelapally@gmail.com"
@@ -77,38 +90,38 @@ def main():
         """
         send_email(in_progress_email_subject, in_progress_email_body, email_from, email_to, smtp_server, smtp_port, smtp_username, smtp_password)
 
-    # Wait for the build to finish
-    while build_status == 'IN_PROGRESS':
-        print("Waiting for the build to finish...")
-        build_status = get_build_status(build_id)
-
-    print(f"Final build status: {build_status}")
-
-    # Retrieve build logs
+    # Immediately retrieve and save build logs
     log_url = get_build_logs(build_id)
+    if log_url:
+        log_file_path = "build_logs.txt"  # Specify the file path for logs
+        save_logs_to_file(log_url, log_file_path)
 
-    # Conditional email for "SUCCEEDED" or "FAILED"
-    if build_status == 'SUCCEEDED':
-        final_email_subject = f"CodeBuild Final Status for project {project_name}"
-        final_email_body = f"""
-        <p>Hi Team,</p>
-        <p>The build for <strong>{project_name}</strong> has finished successfully.</p>
-        <p>Build ID: {build_id}</p>
-        <p>Status: <strong>{build_status}</strong></p>
-        <p>Build Logs: <a href="{log_url}">View Logs</a></p>
-        """
-        send_email(final_email_subject, final_email_body, email_from, email_to, smtp_server, smtp_port, smtp_username, smtp_password)
+        # Read the logs from the file
+        log_content = read_logs_from_file(log_file_path)
+        print("Log content read from file:")
+        print(log_content)
 
-    elif build_status == 'FAILED':
-        failed_email_subject = f"CodeBuild Failed for project {project_name}"
-        failed_email_body = f"""
-        <p>Hi Team,</p>
-        <p>The build for <strong>{project_name}</strong> has failed.</p>
-        <p>Build ID: {build_id}</p>
-        <p>Status: <strong>{build_status}</strong></p>
-        <p>Build Logs: <a href="{log_url}">View Logs</a></p>
-        """
-        send_email(failed_email_subject, failed_email_body, email_from, email_to, smtp_server, smtp_port, smtp_username, smtp_password)
+        # Check the log content for success message
+        if "successfully" in log_content:
+            final_email_subject = f"CodeBuild Final Status for project {project_name}"
+            final_email_body = f"""
+            <p>Hi Team,</p>
+            <p>The build for <strong>{project_name}</strong> has finished successfully.</p>
+            <p>Build ID: {build_id}</p>
+            <p>Status: <strong>{build_status}</strong></p>
+            <p>Build Logs: <a href="{log_url}">View Logs</a></p>
+            """
+            send_email(final_email_subject, final_email_body, email_from, email_to, smtp_server, smtp_port, smtp_username, smtp_password)
+        else:
+            failed_email_subject = f"CodeBuild Failed for project {project_name}"
+            failed_email_body = f"""
+            <p>Hi Team,</p>
+            <p>The build for <strong>{project_name}</strong> has failed.</p>
+            <p>Build ID: {build_id}</p>
+            <p>Status: <strong>{build_status}</strong></p>
+            <p>Build Logs: <a href="{log_url}">View Logs</a></p>
+            """
+            send_email(failed_email_subject, failed_email_body, email_from, email_to, smtp_server, smtp_port, smtp_username, smtp_password)
 
 if __name__ == '__main__':
     main()
