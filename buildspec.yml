@@ -21,6 +21,8 @@ phases:
   post_build:
     commands:
       - echo "Post-build phase started"
+      - if ["$CODEBUILD_BUILD_SUCCEEDING"-eq 1]; then export BUILD_STATUS="SUCCEEDED";else export BUILD_STATUS="FAILED"; fi
+      - sleep 30
       - python post_build.py  # Notify end of build with status
 
 artifacts:
