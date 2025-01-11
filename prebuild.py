@@ -21,18 +21,19 @@ def send_email(subject, message, from_email, to_email, smtp_server, smtp_port, s
         print(f"Error sending email: {e}")
 
 def get_build_status(build_id):
+    client = boto3.client('codebuild')
     try:
-        client = boto3.client('codebuild')
         response = client.batch_get_builds(ids=[build_id])
+        builds = response['builds']
         if builds:
             build_info = builds[0]
-            build_info['buildStatus']
+            build_status=response['builds'][0]['buildstatus']
+            return build_status
         else:
-            build_status = response['build'][0]['buildStatus']
-        return build_status
+            return build_status
     except Exception as e:
         print(f"Error retrieving build status: {e}")
-        sys.exit(1)
+        return 'UNKNOWN'
 def main():
     email_from = "harikarn10@gmail.com"
     email_to = "harikrishnatangelapally@gmail.com"
