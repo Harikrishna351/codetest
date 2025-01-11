@@ -15,7 +15,6 @@ phases:
   build:
     commands:
       - echo "Build phase started"
-      - exit 1
       - # Your build commands here
 
   post_build:
