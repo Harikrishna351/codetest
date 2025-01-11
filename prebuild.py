@@ -80,7 +80,7 @@ def main():
     print(f"Using Build ID: {build_id}")
 
     # Conditional email for "IN_PROGRESS"
-    if build_status == 'IN_PROGRESS':
+    if build_status == 'SUCCEEDED':
         in_progress_email_subject = f"CodeBuild In Progress for project {project_name}"
         in_progress_email_body = f"""
         <p>Hi Team,</p>
