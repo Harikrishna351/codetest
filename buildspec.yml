@@ -6,6 +6,9 @@ phases:
       python: 3.8
     commands:
       - pip install boto3
+      - apt-get update
+      - apt-get install -y awscli
+
 
   pre_build:
     commands:
@@ -23,6 +26,8 @@ phases:
       - if [ "$CODEBUILD_BUILD_SUCCEEDING" -eq 1 ]; then export BUILD_STATUS="SUCCEEDED"; else export BUILD_STATUS="FAILED"; fi
       - sleep 30
       - python post_build.py  # Notify end of build with status
+      - echo "Triggering AWS CodePipeline..."
+      - aws codepipeline start-pipeline-execution --name test
 
 artifacts:
   files:
