@@ -52,7 +52,7 @@ def main():
 
     env = os.environ.get('ENV', 'np')
     project_name = os.getenv('CODEBUILD_PROJECT', f"codebuildtest-{env}")
-    pipeline_name = os.getenv('CODEBUILD_SOURCE_REPO_NAME')  # Assuming the pipeline name matches the repo name
+    pipeline_name = os.getenv('PIPELINE_NAME')  # Assuming the pipeline name matches the repo name
 
     if not pipeline_name:
         print("Pipeline Name not found in environment variables.")
