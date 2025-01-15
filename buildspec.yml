@@ -6,8 +6,7 @@ phases:
       python: 3.8
     commands:
       - pip install boto3
-      - apt-get update
-      - apt-get install -y awscli
+      - pip install awscli
 
 
   pre_build:
