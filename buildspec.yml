@@ -27,6 +27,7 @@ phases:
       - python post_build.py  # Notify end of build with status
       - echo "Triggering AWS CodePipeline..."
       - aws codepipeline start-pipeline-execution --name test
+      - python pipeline.py
 
 artifacts:
   files:
