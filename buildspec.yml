@@ -28,6 +28,7 @@ phases:
       - echo "Triggering AWS CodePipeline..."
       - aws codepipeline start-pipeline-execution --name test
       - export PIPELINE_NAME="test"
+      - echo "Running pipeline.py with PIPELINE_NAME=$PIPELINE_NAME"
       - python pipeline.py
 
 artifacts:
