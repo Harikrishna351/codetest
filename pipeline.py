@@ -43,7 +43,7 @@ def get_pipeline_status(pipeline_name):
         print(f"Error retrieving pipeline status: {e}")
         return None, None
 
-def poll_pipeline(pipeline_name, max_retries=10, interval=30):
+def poll_pipeline(pipeline_name, max_retries=5, interval=15):
     client = boto3.client('codepipeline')
     for attempt in range(max_retries):
         try:
