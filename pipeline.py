@@ -82,26 +82,24 @@ def main():
     statuses = poll_pipeline(pipeline_name)
 
     if statuses:
-        # Check the last status
-        last_status = statuses[-1]
-        execution_id = None
 
         # Check the last execution status
         for status in statuses:
-            if status == "FAILED":
+            Pipeline_status = status  # Assign current status to Pipeline_status
+            if Pipeline_status == "FAILED":  # Check if it is "FAILED"
                 execution_id = status['pipelineExecutionId']
+                final_email_subject = f"CodePipeline Failed for project {project_name}"
+                final_email_body = f"""
+                <p>Hi Team,</p>
+                <p>The pipeline for <strong>{project_name}</strong> has failed.</p>
+                <p>Execution ID: {execution_id}</p>
+                <p>Status: <strong>FAILED</strong></p>
+                <p>Please check the AWS CodePipeline console for more details.</p>
+                """
+                send_email(final_email_subject, final_email_body, email_from, email_to, smtp_server, smtp_port, smtp_username, smtp_password)
                 break
-
-        if last_status == "FAILED":
-            final_email_subject = f"CodePipeline Failed for project {project_name}"
-            final_email_body = f"""
-            <p>Hi Team,</p>
-            <p>The pipeline for <strong>{project_name}</strong> has failed.</p>
-            <p>Execution ID: {execution_id}</p>
-            <p>Status: <strong>FAILED</strong></p>
-            <p>Please check the AWS CodePipeline console for more details.</p>
-            """
-            send_email(final_email_subject, final_email_body, email_from, email_to, smtp_server, smtp_port, smtp_username, smtp_password)
+        else:
+            print("Pipeline did not fail.")
 
 if __name__ == '__main__':
     main()
