@@ -79,12 +79,12 @@ def main():
         return
 
     # Poll the pipeline status
-    statuses = poll_pipeline(pipeline_name)
+    pipeline_result = poll_pipeline(pipeline_name)
 
-    if statuses:
-        # Check the last execution status
+    if pipeline_result == 'FAILED':
+        # Fetch the latest execution ID
         final_status, execution_id = get_pipeline_status(pipeline_name)
-        if final_status == "FAILED" and execution_id:
+        if execution_id:
             final_email_subject = f"CodePipeline Failed for project {project_name}"
             final_email_body = f"""
             <p>Hi Team,</p>
@@ -94,10 +94,8 @@ def main():
             <p>Please check the AWS CodePipeline console for more details.</p>
             """
             send_email(final_email_subject, final_email_body, email_from, email_to, smtp_server, smtp_port, smtp_username, smtp_password)
-        else:
-            print("Pipeline did not fail or execution ID is missing.")
     else:
-        print("No statuses retrieved from polling.")
+        print("Pipeline completed successfully or did not fail.")
 
 if __name__ == '__main__':
     main()
