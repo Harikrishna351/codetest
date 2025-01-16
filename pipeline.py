@@ -84,7 +84,13 @@ def main():
     if statuses:
         # Check the last status
         last_status = statuses[-1]
-        execution_id = statuses[-1]['pipelineExecutionId'] if last_status == 'FAILED' else None
+        execution_id = None
+
+        # Check the last execution status
+        for status in statuses:
+            if status == "FAILED":
+                execution_id = status['pipelineExecutionId']
+                break
 
         if last_status == "FAILED":
             final_email_subject = f"CodePipeline Failed for project {project_name}"
