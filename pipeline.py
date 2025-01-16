@@ -38,24 +38,28 @@ def get_pipeline_status(pipeline_name):
 
 def poll_pipeline(pipeline_name, interval=15):
     client = boto3.client('codepipeline')
-    try:
-        response = client.get_pipeline_state(name=pipeline_name)
-        statuses = [
-            stage['latestExecution']['status']
-            for stage in response['stageStates']
-            if 'latestExecution' in stage
-        ]
-        print(f"Current pipeline statuses: {statuses}")
-        if any(status == 'FAILED' for status in statuses):
-            print("Pipeline has failed.")
-            return 'FAILED'
-        if all(status == 'SUCCEEDED' for status in statuses):
-            print("Pipeline completed successfully.")
-            return 'SUCCEEDED'
-    except Exception as e:
-        print(f"Error fetching pipeline status: {e}")
-        return None
-    return None
+    
+    while True:  # Continuous polling until a terminal state is reached
+        try:
+            response = client.get_pipeline_state(name=pipeline_name)
+            statuses = [
+                stage['latestExecution']['status']
+                for stage in response['stageStates']
+                if 'latestExecution' in stage
+            ]
+            print(f"Current pipeline statuses: {statuses}")
+            
+            if any(status == 'FAILED' for status in statuses):
+                print("Pipeline has failed.")
+                return 'FAILED'
+            elif all(status == 'SUCCEEDED' for status in statuses):
+                print("Pipeline completed successfully.")
+                return 'SUCCEEDED'
+        except Exception as e:
+            print(f"Error fetching pipeline status: {e}")
+            return None
+        
+        time.sleep(interval)  # Wait before the next check
 
 def main():
     email_from = "harikarn10@gmail.com"
@@ -90,7 +94,7 @@ def main():
             """
             send_email(final_email_subject, final_email_body, email_from, email_to, smtp_server, smtp_port, smtp_username, smtp_password)
     else:
-        print("Pipeline completed successfully or did not fail.")
+        print("Pipeline completed successfully.")
 
 if __name__ == '__main__':
     main()
