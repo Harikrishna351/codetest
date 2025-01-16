@@ -3,25 +3,15 @@ import boto3
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from email.mime.base import MIMEBase
-from email import encoders
 import time
 
-def send_email(subject, message, from_email, to_email, smtp_server, smtp_port, smtp_username, smtp_password, attachment_path=None):
+def send_email(subject, message, from_email, to_email, smtp_server, smtp_port, smtp_username, smtp_password):
     msg = MIMEMultipart()
     msg['Subject'] = subject
     msg['From'] = from_email
     msg['To'] = to_email
 
     msg.attach(MIMEText(message, 'html'))
-
-    if attachment_path:
-        part = MIMEBase('application', 'octet-stream')
-        with open(attachment_path, 'rb') as attachment:
-            part.set_payload(attachment.read())
-        encoders.encode_base64(part)
-        part.add_header('Content-Disposition', f'attachment; filename={os.path.basename(attachment_path)}')
-        msg.attach(part)
 
     try:
         with smtplib.SMTP(smtp_server, smtp_port) as server:
@@ -60,9 +50,6 @@ def poll_pipeline(pipeline_name, max_retries=5, interval=15):
             if any(status == 'FAILED' for status in statuses):
                 print("Pipeline has failed.")
                 return 'FAILED'
-            if all(status in ['SUCCEEDED', 'FAILED'] for status in statuses):
-                print(f"Pipeline completed with statuses: {statuses}")
-                return 'SUCCEEDED'
         except Exception as e:
             print(f"Error fetching pipeline status: {e}")
             return
