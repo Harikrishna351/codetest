@@ -36,9 +36,12 @@ def get_pipeline_status(pipeline_name):
     client = boto3.client('codepipeline')
     try:
         response = client.list_pipeline_executions(pipelineName=pipeline_name)
-        # Get the latest execution
-        latest_execution = response['pipelineExecutionSummaries'][0]
-        return latest_execution['status'], latest_execution['pipelineExecutionId']
+        if response['pipelineExecutionSummaries']:
+            latest_execution = response['pipelineExecutionSummaries'][0]
+            return latest_execution['status'], latest_execution['pipelineExecutionId']
+        else:
+            print("No executions found for the pipeline.")
+            return None, None
     except Exception as e:
         print(f"Error retrieving pipeline status: {e}")
         return None, None
@@ -54,13 +57,17 @@ def poll_pipeline(pipeline_name, max_retries=5, interval=15):
                 if 'latestExecution' in stage
             ]
             print(f"Attempt {attempt + 1}: Current pipeline statuses - {statuses}")
+            if any(status == 'FAILED' for status in statuses):
+                print("Pipeline has failed.")
+                return 'FAILED'
             if all(status in ['SUCCEEDED', 'FAILED'] for status in statuses):
                 print(f"Pipeline completed with statuses: {statuses}")
-                return statuses
+                return 'SUCCEEDED'
         except Exception as e:
             print(f"Error fetching pipeline status: {e}")
             return
         time.sleep(interval)
+    return None
 
 def main():
     email_from = "harikarn10@gmail.com"
@@ -72,7 +79,7 @@ def main():
 
     env = os.environ.get('ENV', 'np')
     project_name = os.getenv('CODEBUILD_PROJECT', f"test2-{env}")
-    pipeline_name = os.getenv('PIPELINE_NAME')  # Assuming the pipeline name matches the repo name
+    pipeline_name = os.getenv('PIPELINE_NAME')
 
     if not pipeline_name:
         print("Pipeline Name not found in environment variables.")
