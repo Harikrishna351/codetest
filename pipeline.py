@@ -5,6 +5,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email import encoders
+import time
 
 def send_email(subject, message, from_email, to_email, smtp_server, smtp_port, smtp_username, smtp_password, attachment_path=None):
     msg = MIMEMultipart()
@@ -42,6 +43,25 @@ def get_pipeline_status(pipeline_name):
         print(f"Error retrieving pipeline status: {e}")
         return None, None
 
+def poll_pipeline(pipeline_name, max_retries=10, interval=30):
+    client = boto3.client('codepipeline')
+    for attempt in range(max_retries):
+        try:
+            response = client.get_pipeline_state(name=pipeline_name)
+            statuses = [
+                stage['latestExecution']['status']
+                for stage in response['stageStates']
+                if 'latestExecution' in stage
+            ]
+            print(f"Attempt {attempt + 1}: Current pipeline statuses - {statuses}")
+            if all(status in ['SUCCEEDED', 'FAILED'] for status in statuses):
+                print(f"Pipeline completed with statuses: {statuses}")
+                return statuses
+        except Exception as e:
+            print(f"Error fetching pipeline status: {e}")
+            return
+        time.sleep(interval)
+
 def main():
     email_from = "harikarn10@gmail.com"
     email_to = "harikrishnatangelapally@gmail.com"
@@ -58,19 +78,24 @@ def main():
         print("Pipeline Name not found in environment variables.")
         return
 
-    # Check the CodePipeline status
-    build_status, execution_id = get_pipeline_status(pipeline_name)
+    # Poll the pipeline status
+    statuses = poll_pipeline(pipeline_name)
 
-    if build_status == "Failed":
-        final_email_subject = f"CodePipeline Failed for project {project_name}"
-        final_email_body = f"""
-        <p>Hi Team,</p>
-        <p>The pipeline for <strong>{project_name}</strong> has failed.</p>
-        <p>Execution ID: {execution_id}</p>
-        <p>Status: <strong>FAILED</strong></p>
-        <p>Please check the AWS CodePipeline console for more details.</p>
-        """
-        send_email(final_email_subject, final_email_body, email_from, email_to, smtp_server, smtp_port, smtp_username, smtp_password)
+    if statuses:
+        # Check the last status
+        last_status = statuses[-1]
+        execution_id = statuses[-1]['pipelineExecutionId'] if last_status == 'FAILED' else None
+
+        if last_status == "FAILED":
+            final_email_subject = f"CodePipeline Failed for project {project_name}"
+            final_email_body = f"""
+            <p>Hi Team,</p>
+            <p>The pipeline for <strong>{project_name}</strong> has failed.</p>
+            <p>Execution ID: {execution_id}</p>
+            <p>Status: <strong>FAILED</strong></p>
+            <p>Please check the AWS CodePipeline console for more details.</p>
+            """
+            send_email(final_email_subject, final_email_body, email_from, email_to, smtp_server, smtp_port, smtp_username, smtp_password)
 
 if __name__ == '__main__':
     main()
