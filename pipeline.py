@@ -46,9 +46,12 @@ def poll_pipeline(pipeline_name, interval=15):
             if 'latestExecution' in stage
         ]
         print(f"Current pipeline statuses: {statuses}")
-        if (status == 'FAILED' for status in statuses):
+        if any(status == 'FAILED' for status in statuses):
             print("Pipeline has failed.")
             return 'FAILED'
+        if all(status == 'SUCCEEDED' for status in statuses):
+            print("Pipeline completed successfully.")
+            return 'SUCCEEDED'
     except Exception as e:
         print(f"Error fetching pipeline status: {e}")
         return None
