@@ -71,7 +71,7 @@ def main():
     smtp_password = "BOnvUFr8KQHsryZa3a/r2NRXSASK6UbhSpRIwLamvEZD"
 
     env = os.environ.get('ENV', 'np')
-    project_name = os.getenv('CODEBUILD_PROJECT', f"codebuildtest-{env}")
+    project_name = os.getenv('CODEBUILD_PROJECT', f"test2-{env}")
     pipeline_name = os.getenv('PIPELINE_NAME')  # Assuming the pipeline name matches the repo name
 
     if not pipeline_name:
