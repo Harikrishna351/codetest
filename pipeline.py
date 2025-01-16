@@ -36,24 +36,22 @@ def get_pipeline_status(pipeline_name):
         print(f"Error retrieving pipeline status: {e}")
         return None, None
 
-def poll_pipeline(pipeline_name, max_retries=5, interval=15):
+def poll_pipeline(pipeline_name, interval=15):
     client = boto3.client('codepipeline')
-    for attempt in range(max_retries):
-        try:
-            response = client.get_pipeline_state(name=pipeline_name)
-            statuses = [
-                stage['latestExecution']['status']
-                for stage in response['stageStates']
-                if 'latestExecution' in stage
-            ]
-            print(f"Attempt {attempt + 1}: Current pipeline statuses - {statuses}")
-            if any(status == 'FAILED' for status in statuses):
-                print("Pipeline has failed.")
-                return 'FAILED'
-        except Exception as e:
-            print(f"Error fetching pipeline status: {e}")
-            return
-        time.sleep(interval)
+    try:
+        response = client.get_pipeline_state(name=pipeline_name)
+        statuses = [
+            stage['latestExecution']['status']
+            for stage in response['stageStates']
+            if 'latestExecution' in stage
+        ]
+        print(f"Current pipeline statuses: {statuses}")
+        if (status == 'FAILED' for status in statuses):
+            print("Pipeline has failed.")
+            return 'FAILED'
+    except Exception as e:
+        print(f"Error fetching pipeline status: {e}")
+        return None
     return None
 
 def main():
