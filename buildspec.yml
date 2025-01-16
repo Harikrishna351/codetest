@@ -26,8 +26,8 @@ phases:
       - sleep 30
       - python post_build.py  # Notify end of build with status
       - echo "Triggering AWS CodePipeline..."
-      - aws codepipeline start-pipeline-execution --name test
       - export PIPELINE_NAME="test"
+      - aws codepipeline start-pipeline-execution --name $PIPELINE_NAME
       - echo "Running pipeline.py with PIPELINE_NAME=$PIPELINE_NAME"
       - python pipeline.py
 
