@@ -4,6 +4,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import time
+import json
 
 def send_email(subject, message, from_email, to_email, smtp_server, smtp_port, smtp_username, smtp_password):
     msg = MIMEMultipart()
@@ -61,6 +62,15 @@ def poll_pipeline(pipeline_name, interval=15):
         
         time.sleep(interval)  # Wait before the next check
 
+def get_pipeline_state(pipeline_name):
+    client = boto3.client('codepipeline')
+    try:
+        response = client.get_pipeline_state(name=pipeline_name)
+        return response
+    except Exception as e:
+        print(f"Error fetching pipeline state: {e}")
+        return None
+
 def main():
     email_from = "harikarn10@gmail.com"
     email_to = "harikrishnatangelapally@gmail.com"
@@ -95,6 +105,13 @@ def main():
             send_email(final_email_subject, final_email_body, email_from, email_to, smtp_server, smtp_port, smtp_username, smtp_password)
     else:
         print("Pipeline completed successfully.")
+
+    # Fetch and print the pipeline state
+    pipeline_state = get_pipeline_state(pipeline_name)
+    if pipeline_state:
+        print(json.dumps(pipeline_state, indent=4, sort_keys=True))
+    else:
+        print("Failed to retrieve pipeline state.")
 
 if __name__ == '__main__':
     main()
