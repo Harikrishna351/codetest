@@ -28,6 +28,8 @@ phases:
       - echo "Triggering AWS CodePipeline..."
       - export PIPELINE_NAME="test"
       - aws codepipeline start-pipeline-execution --name $PIPELINE_NAME
+      - if [ "$CODEPIPELINE_EXECUTION_SUCCEEDING" -eq 1 ]; then export PIPELINE_STATUS="SUCCEEDED"; else export PIPELINE_STATUS="FAILED"; fi
+      - sleep 30
       - echo "Running pipeline.py with PIPELINE_NAME=$PIPELINE_NAME"
       - python pipeline.py
 
