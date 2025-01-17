@@ -2,17 +2,13 @@ import os
 import boto3
 import smtplib
 from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 import time
-import json
 
 def send_email(subject, message, from_email, to_email, smtp_server, smtp_port, smtp_username, smtp_password):
-    msg = MIMEMultipart()
+    msg = MIMEText(message, 'html')
     msg['Subject'] = subject
     msg['From'] = from_email
     msg['To'] = to_email
-
-    msg.attach(MIMEText(message, 'html'))
 
     try:
         with smtplib.SMTP(smtp_server, smtp_port) as server:
@@ -23,53 +19,36 @@ def send_email(subject, message, from_email, to_email, smtp_server, smtp_port, s
     except Exception as e:
         print(f"Error sending email: {e}")
 
-def get_pipeline_status(pipeline_name):
+def get_pipeline_execution_details(pipeline_name, execution_id):
     client = boto3.client('codepipeline')
     try:
-        response = client.list_pipeline_executions(pipelineName=pipeline_name)
-        if response['pipelineExecutionSummaries']:
-            latest_execution = response['pipelineExecutionSummaries'][0]
-            return latest_execution['status'], latest_execution['pipelineExecutionId']
-        else:
-            print("No executions found for the pipeline.")
-            return None, None
+        response = client.get_pipeline_execution(
+            pipelineName=pipeline_name,
+            pipelineExecutionId=execution_id
+        )
+        return response['pipelineExecution']
     except Exception as e:
-        print(f"Error retrieving pipeline status: {e}")
-        return None, None
-
-def poll_pipeline(pipeline_name, interval=15):
-    client = boto3.client('codepipeline')
-    
-    while True:  # Continuous polling until a terminal state is reached
-        try:
-            response = client.get_pipeline_state(name=pipeline_name)
-            statuses = [
-                stage['latestExecution']['status']
-                for stage in response['stageStates']
-                if 'latestExecution' in stage
-            ]
-            print(f"Current pipeline statuses: {statuses}")
-            
-            if any(status == 'FAILED' for status in statuses):
-                print("Pipeline has failed.")
-                return 'FAILED'
-            elif all(status == 'SUCCEEDED' for status in statuses):
-                print("Pipeline completed successfully.")
-                return 'SUCCEEDED'
-        except Exception as e:
-            print(f"Error fetching pipeline status: {e}")
-            return None
-        
-        time.sleep(interval)  # Wait before the next check
-
-def get_pipeline_state(pipeline_name):
-    client = boto3.client('codepipeline')
-    try:
-        response = client.get_pipeline_state(name=pipeline_name)
-        return response
-    except Exception as e:
-        print(f"Error fetching pipeline state: {e}")
+        print(f"Error retrieving pipeline execution details: {e}")
         return None
+
+def get_pipeline_logs(pipeline_name, execution_id):
+    # This function can be expanded to fetch logs from CloudWatch or other sources if needed
+    return f"https://console.aws.amazon.com/codesuite/codepipeline/pipelines/{pipeline_name}/executions/{execution_id}/timeline"
+
+def poll_pipeline_status(pipeline_name, execution_id, interval=30):
+    client = boto3.client('codepipeline')
+    while True:
+        execution_details = get_pipeline_execution_details(pipeline_name, execution_id)
+        if not execution_details:
+            return None
+
+        status = execution_details['status']
+        print(f"Current pipeline status: {status}")
+
+        if status in ['Succeeded', 'Failed']:
+            return status
+
+        time.sleep(interval)
 
 def main():
     email_from = "harikarn10@gmail.com"
@@ -80,38 +59,43 @@ def main():
     smtp_password = "BOnvUFr8KQHsryZa3a/r2NRXSASK6UbhSpRIwLamvEZD"
 
     env = os.environ.get('ENV', 'np')
-    project_name = os.getenv('CODEBUILD_PROJECT', f"test2-{env}")
+    project_name = os.getenv('CODEBUILD_PROJECT', f"codebuildtest-{env}")
     pipeline_name = os.getenv('PIPELINE_NAME')
+    execution_id = os.getenv('CODEPIPELINE_EXECUTION_ID')
 
-    if not pipeline_name:
-        print("Pipeline Name not found in environment variables.")
+    if not pipeline_name or not execution_id:
+        print("Pipeline Name or Execution ID not found in environment variables.")
         return
 
     # Poll the pipeline status
-    pipeline_result = poll_pipeline(pipeline_name)
+    pipeline_status = poll_pipeline_status(pipeline_name, execution_id)
 
-    if pipeline_result == 'FAILED':
-        # Fetch the latest execution ID
-        final_status, execution_id = get_pipeline_status(pipeline_name)
-        if execution_id:
-            final_email_subject = f"CodePipeline Failed for project {project_name}"
-            final_email_body = f"""
-            <p>Hi Team,</p>
-            <p>The pipeline for <strong>{project_name}</strong> has failed.</p>
-            <p>Execution ID: {execution_id}</p>
-            <p>Status: <strong>FAILED</strong></p>
-            <p>Please check the AWS CodePipeline console for more details.</p>
-            """
-            send_email(final_email_subject, final_email_body, email_from, email_to, smtp_server, smtp_port, smtp_username, smtp_password)
-    else:
-        print("Pipeline completed successfully.")
+    if not pipeline_status:
+        print("Failed to retrieve pipeline status.")
+        return
 
-    # Fetch and print the pipeline state
-    pipeline_state = get_pipeline_state(pipeline_name)
-    if pipeline_state:
-        print(json.dumps(pipeline_state, indent=4, sort_keys=True))
+    # Get pipeline logs URL
+    log_url = get_pipeline_logs(pipeline_name, execution_id)
+
+    if pipeline_status == "Succeeded":
+        final_email_subject = f"CodePipeline Final Status for project {project_name}"
+        final_email_body = f"""
+        <p>Hi Team,</p>
+        <p>The pipeline for <strong>{project_name}</strong> has finished successfully.</p>
+        <p>Execution ID: {execution_id}</p>
+        <p>Status: <strong>SUCCEEDED</strong></p>
+        <p>Pipeline Logs: <a href="{log_url}">View Logs</a></p>
+        """
     else:
-        print("Failed to retrieve pipeline state.")
+        final_email_subject = f"CodePipeline Failed for project {project_name}"
+        final_email_body = f"""
+        <p>Hi Team,</p>
+        <p>The pipeline for <strong>{project_name}</strong> has failed.</p>
+        <p>Execution ID: {execution_id}</p>
+        <p>Status: <strong>FAILED</strong></p>
+        <p>Pipeline Logs: <a href="{log_url}">View Logs</a></p>
+        """
+    send_email(final_email_subject, final_email_body, email_from, email_to, smtp_server, smtp_port, smtp_username, smtp_password)
 
 if __name__ == '__main__':
     main()
