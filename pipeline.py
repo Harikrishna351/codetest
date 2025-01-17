@@ -22,6 +22,7 @@ def send_email(subject, message, from_email, to_email, smtp_server, smtp_port, s
 def get_pipeline_execution_details(pipeline_name, execution_id):
     client = boto3.client('codepipeline')
     try:
+        print(f"Fetching details for Pipeline: {pipeline_name}, Execution ID: {execution_id}")
         response = client.get_pipeline_execution(
             pipelineName=pipeline_name,
             pipelineExecutionId=execution_id
@@ -62,7 +63,8 @@ def main():
     project_name = os.getenv('CODEBUILD_PROJECT', f"codebuildtest-{env}")
     pipeline_name = os.getenv('PIPELINE_NAME')
     execution_id = os.getenv('CODEPIPELINE_EXECUTION_ID')
-    
+
+    # Debugging statements to check environment variables
     print(f"Pipeline Name: {pipeline_name}")
     print(f"Execution ID: {execution_id}")
 
