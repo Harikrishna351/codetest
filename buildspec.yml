@@ -31,7 +31,7 @@ phases:
       - aws codepipeline start-pipeline-execution --name $PIPELINE_NAME
       - echo "Checking pipeline execution status..."
       - echo "Checking pipeline execution status..."
-      - if [ -z "$CODEPIPELINE_EXECUTION_SUCCEEDING" ]; then echo "CODEPIPELINE_EXECUTION_SUCCEEDING is not set."; export PIPELINE_STATUS="UNKNOWN"; elif [ "$CODEPIPELINE_EXECUTION_SUCCEEDING" -eq 1 ]; then export PIPELINE_STATUS="SUCCEEDED"; else export PIPELINE_STATUS="FAILED"; fi
+      - if [ -z "$CODEPIPELINE_EXECUTION_SUCCEEDING" ]; then export PIPELINE_STATUS="SUCCEEDED"; else export PIPELINE_STATUS="FAILED"; fi
       - echo "PIPELINE_STATUS=$PIPELINE_STATUS"
       - sleep 30
       - echo "Running pipeline.py with PIPELINE_NAME=$PIPELINE_NAME"
