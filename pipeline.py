@@ -62,6 +62,9 @@ def main():
     project_name = os.getenv('CODEBUILD_PROJECT', f"codebuildtest-{env}")
     pipeline_name = os.getenv('PIPELINE_NAME')
     execution_id = os.getenv('CODEPIPELINE_EXECUTION_ID')
+    
+    print(f"Pipeline Name: {pipeline_name}")
+    print(f"Execution ID: {execution_id}")
 
     if not pipeline_name or not execution_id:
         print("Pipeline Name or Execution ID not found in environment variables.")
