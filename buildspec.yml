@@ -29,6 +29,7 @@ phases:
       - export PIPELINE_NAME="test"
       - aws codepipeline start-pipeline-execution --name $PIPELINE_NAME
       - export CODEPIPELINE_EXECUTION_ID=$(aws codepipeline list-pipeline-executions --pipeline-name $PIPELINE_NAME --max-items 1 --query 'pipelineExecutionSummaries[0].pipelineExecutionId' --output text)
+      - echo "Retrieved CODEPIPELINE_EXECUTION_ID=$CODEPIPELINE_EXECUTION_ID"
       - echo "Running pipeline.py with PIPELINE_NAME=$PIPELINE_NAME and CODEPIPELINE_EXECUTION_ID=$CODEPIPELINE_EXECUTION_ID"
       - python pipeline.py
 
