@@ -19,29 +19,29 @@ phases:
       - echo "Build phase started"
       - # Your build commands here
 
-post_build:
-  commands:
-    - echo "Post-build phase started"
-    - if [ "$CODEBUILD_BUILD_SUCCEEDING" -eq 1 ]; then export BUILD_STATUS="SUCCEEDED"; else export BUILD_STATUS="FAILED"; fi
-    - echo "BUILD_STATUS=$BUILD_STATUS"
-    - sleep 30
-    - python post_build.py  # Notify end of build with status
-    - echo "Triggering AWS CodePipeline..."
-    - export PIPELINE_NAME="test"
-    - aws codepipeline start-pipeline-execution --name $PIPELINE_NAME
-    - echo "Checking pipeline execution status..."
-    - if [ -z "$CODEPIPELINE_EXECUTION_SUCCEEDING" ]; then
-        echo "CODEPIPELINE_EXECUTION_SUCCEEDING is not set."
-        export PIPELINE_STATUS="UNKNOWN"
-      elif [ "$CODEPIPELINE_EXECUTION_SUCCEEDING" -eq 1 ]; then
-        export PIPELINE_STATUS="SUCCEEDED"
-      else
-        export PIPELINE_STATUS="FAILED"
-      fi
-    - echo "PIPELINE_STATUS=$PIPELINE_STATUS"
-    - sleep 30
-    - echo "Running pipeline.py with PIPELINE_NAME=$PIPELINE_NAME"
-    - python pipeline.py
+  post_build:
+    commands:
+      - echo "Post-build phase started"
+      - if [ "$CODEBUILD_BUILD_SUCCEEDING" -eq 1 ]; then export BUILD_STATUS="SUCCEEDED"; else export BUILD_STATUS="FAILED"; fi
+      - echo "BUILD_STATUS=$BUILD_STATUS"
+      - sleep 30
+      - python post_build.py  # Notify end of build with status
+      - echo "Triggering AWS CodePipeline..."
+      - export PIPELINE_NAME="test"
+      - aws codepipeline start-pipeline-execution --name $PIPELINE_NAME
+      - echo "Checking pipeline execution status..."
+      - if [ -z "$CODEPIPELINE_EXECUTION_SUCCEEDING" ]; then
+          echo "CODEPIPELINE_EXECUTION_SUCCEEDING is not set."
+          export PIPELINE_STATUS="UNKNOWN"
+        elif [ "$CODEPIPELINE_EXECUTION_SUCCEEDING" -eq 1 ]; then
+          export PIPELINE_STATUS="SUCCEEDED"
+        else
+          export PIPELINE_STATUS="FAILED"
+        fi
+      - echo "PIPELINE_STATUS=$PIPELINE_STATUS"
+      - sleep 30
+      - echo "Running pipeline.py with PIPELINE_NAME=$PIPELINE_NAME"
+      - python pipeline.py
 
 artifacts:
   files:
