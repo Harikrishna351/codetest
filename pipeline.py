@@ -19,36 +19,33 @@ def send_email(subject, message, from_email, to_email, smtp_server, smtp_port, s
     except Exception as e:
         print(f"Error sending email: {e}")
 
-def get_pipeline_execution_details(pipeline_name, execution_id):
-    client = boto3.client('codepipeline')
-    try:
-        print(f"Fetching details for Pipeline: {pipeline_name}, Execution ID: {execution_id}")
-        response = client.get_pipeline_execution(
-            pipelineName=pipeline_name,
-            pipelineExecutionId=execution_id
-        )
-        return response['pipelineExecution']
-    except Exception as e:
-        print(f"Error retrieving pipeline execution details: {e}")
-        return None
-
 def get_pipeline_logs(pipeline_name, execution_id):
     # This function can be expanded to fetch logs from CloudWatch or other sources if needed
     return f"https://console.aws.amazon.com/codesuite/codepipeline/pipelines/{pipeline_name}/executions/{execution_id}/timeline"
 
-def poll_pipeline_status(pipeline_name, execution_id, interval=30):
-    client = boto3.client('codepipeline')
+def get_pipeline_status_from_logs(log_group_name, execution_id, interval=30):
+    client = boto3.client('logs')
+    query = f"fields @timestamp, @message | filter @message like /{execution_id}/ | sort @timestamp desc | limit 20"
+    start_query_response = client.start_query(
+        logGroupName=log_group_name,
+        startTime=int(time.time()) - 3600,
+        endTime=int(time.time()),
+        queryString=query,
+    )
+
+    query_id = start_query_response['queryId']
     while True:
-        execution_details = get_pipeline_execution_details(pipeline_name, execution_id)
-        if not execution_details:
-            return None
-
-        status = execution_details['status']
-        print(f"Current pipeline status: {status}")
-
-        if status in ['Succeeded', 'Failed']:
-            return status
-
+        response = client.get_query_results(queryId=query_id)
+        if response['status'] == 'Complete':
+            for result in response['results']:
+                for field in result:
+                    if field['field'] == '@message':
+                        message = field['value']
+                        if 'SUCCEEDED' in message:
+                            return 'Succeeded'
+                        elif 'FAILED' in message:
+                            return 'Failed'
+            return 'InProgress'
         time.sleep(interval)
 
 def main():
@@ -63,17 +60,19 @@ def main():
     project_name = os.getenv('CODEBUILD_PROJECT', f"codebuildtest-{env}")
     pipeline_name = os.getenv('PIPELINE_NAME')
     execution_id = os.getenv('CODEPIPELINE_EXECUTION_ID')
+    log_group_name = f"/aws/codepipeline/{pipeline_name}"
 
     # Debugging statements to check environment variables
     print(f"Pipeline Name: {pipeline_name}")
     print(f"Execution ID: {execution_id}")
+    print(f"Log Group Name: {log_group_name}")
 
     if not pipeline_name or not execution_id:
         print("Pipeline Name or Execution ID not found in environment variables.")
         return
 
-    # Poll the pipeline status
-    pipeline_status = poll_pipeline_status(pipeline_name, execution_id)
+    # Poll the pipeline status from CloudWatch logs
+    pipeline_status = get_pipeline_status_from_logs(log_group_name, execution_id)
 
     if not pipeline_status:
         print("Failed to retrieve pipeline status.")
